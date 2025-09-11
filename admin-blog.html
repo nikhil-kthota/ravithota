@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+    <!-- BEGIN HEAD -->
+    <head>
+        <meta charset="utf-8"/>
+        <title>Admin Blog - Ravi Thota</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+        <meta content="Admin Blog Management" name="description"/>
+        <meta content="Ravi Thota" name="author"/>
+
+        <!-- GLOBAL MANDATORY STYLES -->
+        <link href="http://fonts.googleapis.com/css?family=Hind:300,400,500,600,700" rel="stylesheet" type="text/css">
+        <link href="vendor/simple-line-icons/css/simple-line-icons.css" rel="stylesheet" type="text/css"/>
+        <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+
+        <!-- PAGE LEVEL PLUGIN STYLES -->
+        <link href="css/animate.css" rel="stylesheet">
+
+        <!-- THEME STYLES -->
+        <link href="css/layout.min.css" rel="stylesheet" type="text/css"/>
+
+        <!-- Favicon -->
+        <link rel="shortcut icon" href="favicon.ico"/>
+        
+        <style>
+            .login-container {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(125deg, #17bed2 0%, #b97b10 100%);
+            }
+            .login-form {
+                background: white;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+                width: 100%;
+                max-width: 400px;
+            }
+            .admin-container {
+                padding-top: 100px;
+                min-height: 100vh;
+            }
+            .blog-form {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                margin-bottom: 30px;
+            }
+            .image-preview {
+                max-width: 200px;
+                max-height: 200px;
+                margin-top: 10px;
+                border-radius: 5px;
+            }
+            .hidden {
+                display: none;
+            }
+            .error-message {
+                color: #e74c3c;
+                margin-top: 10px;
+            }
+            .success-message {
+                color: #27ae60;
+                margin-top: 10px;
+            }
+            .margin-r-10 {
+                margin-right: 10px;
+            }
+        </style>
+    </head>
+    <!-- END HEAD -->
+
+    <!-- BODY -->
+    <body id="body">
+
+        <!-- Login Form -->
+        <div id="login-section" class="login-container">
+            <div class="login-form">
+                <h2 class="text-center margin-b-30">Admin Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                <div id="login-error" class="error-message hidden"></div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-section" class="admin-container hidden">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+                        <div class="text-center margin-b-30">
+                            <h2>Blog Management</h2>
+                            <p>Create and manage your blog posts</p>
+                        </div>
+
+                        <!-- Blog Creation/Edit Form -->
+                        <div class="blog-form">
+                            <h3 id="form-title">Create New Blog Post</h3>
+                            <form id="blog-form">
+                                <input type="hidden" id="edit-blog-id" value="">
+                                <div class="form-group">
+                                    <label for="blog-title">Title</label>
+                                    <input type="text" class="form-control" id="blog-title" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="blog-content">Content</label>
+                                    <textarea class="form-control" id="blog-content" rows="8" required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="blog-image">Image (Optional)</label>
+                                    <input type="file" class="form-control" id="blog-image" accept="image/*">
+                                    <div id="image-preview-container"></div>
+                                    <div id="current-image-container"></div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="submit-btn">Post Blog</button>
+                                <button type="button" class="btn btn-warning" id="cancel-edit-btn" onclick="cancelEdit()" style="display: none;">Cancel Edit</button>
+                                <button type="button" class="btn btn-default" onclick="logout()">Logout</button>
+                            </form>
+                            <div id="blog-message"></div>
+                        </div>
+
+                        <!-- Existing Blogs -->
+                        <div class="blog-form">
+                            <h3>Existing Blog Posts</h3>
+                            <div id="existing-blogs">
+                                <!-- Existing blogs will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JAVASCRIPTS(Load javascripts at bottom, this will reduce page load time) -->
+        <!-- CORE PLUGINS -->
+        <script src="vendor/jquery.min.js" type="text/javascript"></script>
+        <script src="vendor/jquery-migrate.min.js" type="text/javascript"></script>
+        <script src="vendor/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+
+        <!-- PAGE LEVEL PLUGINS -->
+        <script src="vendor/jquery.easing.js" type="text/javascript"></script>
+
+        <!-- PAGE LEVEL SCRIPTS -->
+        <script src="js/layout.min.js" type="text/javascript"></script>
+        <script src="js/blog-manager.js" type="text/javascript"></script>
+        
+        <!-- Admin Script -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Check if user is already authenticated
+                if (authManager.isAuthenticated()) {
+                    showAdminSection();
+                } else {
+                    showLoginSection();
+                }
+
+                // Login form handler
+                document.getElementById('login-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if (authManager.login(username, password)) {
+                        showAdminSection();
+                        document.getElementById('login-error').classList.add('hidden');
+                    } else {
+                        document.getElementById('login-error').textContent = 'Invalid username or password';
+                        document.getElementById('login-error').classList.remove('hidden');
+                    }
+                });
+
+                // Blog form handler
+                document.getElementById('blog-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    createBlogPost();
+                });
+
+                // Image upload handler
+                document.getElementById('blog-image').addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        handleImageUpload(file, function(imageData) {
+                            const previewContainer = document.getElementById('image-preview-container');
+                            previewContainer.innerHTML = `<img src="${imageData}" class="image-preview" alt="Preview">`;
+                        });
+                    }
+                });
+            });
+
+            function showLoginSection() {
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('admin-section').classList.add('hidden');
+            }
+
+            function showAdminSection() {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('admin-section').classList.remove('hidden');
+                loadExistingBlogs();
+            }
+
+            function logout() {
+                authManager.logout();
+                showLoginSection();
+                // Clear form
+                document.getElementById('blog-form').reset();
+                document.getElementById('image-preview-container').innerHTML = '';
+                document.getElementById('blog-message').innerHTML = '';
+            }
+
+            function createBlogPost() {
+                const title = document.getElementById('blog-title').value;
+                const content = document.getElementById('blog-content').value;
+                const imageFile = document.getElementById('blog-image').files[0];
+                const editId = document.getElementById('edit-blog-id').value;
+                
+                if (!title || !content) {
+                    showMessage('Please fill in all required fields', 'error');
+                    return;
+                }
+
+                if (imageFile) {
+                    handleImageUpload(imageFile, function(imageData) {
+                        if (editId) {
+                            // Update existing blog
+                            const blog = blogManager.updateBlog(editId, title, content, imageData);
+                            showMessage('Blog post updated successfully!', 'success');
+                        } else {
+                            // Create new blog
+                            const blog = blogManager.addBlog(title, content, imageData);
+                            showMessage('Blog post created successfully!', 'success');
+                        }
+                        resetForm();
+                        loadExistingBlogs();
+                    });
+                } else {
+                    if (editId) {
+                        // Update existing blog without changing image
+                        const existingBlog = blogManager.getBlogById(editId);
+                        const imageUrl = existingBlog ? existingBlog.imageUrl : null;
+                        const blog = blogManager.updateBlog(editId, title, content, imageUrl);
+                        showMessage('Blog post updated successfully!', 'success');
+                    } else {
+                        // Create new blog
+                        const blog = blogManager.addBlog(title, content);
+                        showMessage('Blog post created successfully!', 'success');
+                    }
+                    resetForm();
+                    loadExistingBlogs();
+                }
+            }
+
+            function loadExistingBlogs() {
+                const container = document.getElementById('existing-blogs');
+                const blogs = blogManager.getAllBlogs();
+                
+                if (blogs.length === 0) {
+                    container.innerHTML = '<p>No blog posts yet.</p>';
+                    return;
+                }
+
+                let html = '';
+                blogs.forEach(blog => {
+                    html += `
+                        <div class="panel panel-default margin-b-20">
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h4>${blog.title}</h4>
+                                        <p>${truncateText(blog.content, 150)}</p>
+                                        <small class="text-muted">Posted on: ${blog.date}</small>
+                                    </div>
+                                    <div class="col-md-4 text-right">
+                                        ${blog.imageUrl ? `<img src="${blog.imageUrl}" style="max-width: 100px; max-height: 100px;" class="img-thumbnail">` : ''}
+                                        <br><br>
+                                        <button class="btn btn-primary btn-sm margin-r-10" onclick="editBlog('${blog.id}')">Edit</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteBlog('${blog.id}')">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            }
+
+            function editBlog(blogId) {
+                const blog = blogManager.getBlogById(blogId);
+                if (!blog) {
+                    showMessage('Blog post not found', 'error');
+                    return;
+                }
+
+                // Populate form with blog data
+                document.getElementById('edit-blog-id').value = blogId;
+                document.getElementById('blog-title').value = blog.title;
+                document.getElementById('blog-content').value = blog.content;
+                
+                // Update form UI for edit mode
+                document.getElementById('form-title').textContent = 'Edit Blog Post';
+                document.getElementById('submit-btn').textContent = 'Update Blog';
+                document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+                
+                // Show current image if exists
+                const currentImageContainer = document.getElementById('current-image-container');
+                if (blog.imageUrl) {
+                    currentImageContainer.innerHTML = `
+                        <div class="margin-t-10">
+                            <label>Current Image:</label>
+                            <img src="${blog.imageUrl}" class="image-preview" alt="Current image">
+                            <p class="text-muted small">Upload a new image to replace the current one</p>
+                        </div>
+                    `;
+                } else {
+                    currentImageContainer.innerHTML = '';
+                }
+                
+                // Clear new image preview
+                document.getElementById('image-preview-container').innerHTML = '';
+                
+                // Scroll to form
+                document.getElementById('blog-form').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            function cancelEdit() {
+                resetForm();
+            }
+
+            function resetForm() {
+                document.getElementById('blog-form').reset();
+                document.getElementById('edit-blog-id').value = '';
+                document.getElementById('form-title').textContent = 'Create New Blog Post';
+                document.getElementById('submit-btn').textContent = 'Post Blog';
+                document.getElementById('cancel-edit-btn').style.display = 'none';
+                document.getElementById('image-preview-container').innerHTML = '';
+                document.getElementById('current-image-container').innerHTML = '';
+                document.getElementById('blog-message').innerHTML = '';
+            }
+
+            function deleteBlog(blogId) {
+                if (confirm('Are you sure you want to delete this blog post?')) {
+                    blogManager.deleteBlog(blogId);
+                    showMessage('Blog post deleted successfully!', 'success');
+                    loadExistingBlogs();
+                }
+            }
+
+            function showMessage(message, type) {
+                const messageDiv = document.getElementById('blog-message');
+                messageDiv.textContent = message;
+                messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+                messageDiv.classList.remove('hidden');
+                
+                // Hide message after 3 seconds
+                setTimeout(function() {
+                    messageDiv.classList.add('hidden');
+                }, 3000);
+            }
+        </script>
+
+    </body>
+    <!-- END BODY -->
+</html>
